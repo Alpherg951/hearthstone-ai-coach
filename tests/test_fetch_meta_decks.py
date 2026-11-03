@@ -57,6 +57,17 @@ class SensitiveOutPathTests(unittest.TestCase):
     def test_dot_segments_do_not_bypass_guard(self) -> None:
         self.assertTrue(f.is_sensitive_out_path("/tmp/../etc/meta_decks.json"))
 
+    def test_symlinked_system_root_does_not_bypass_guard(self) -> None:
+        """macOS symlinks /etc -> /private/etc; resolving must not lose the guard."""
+        with tempfile.TemporaryDirectory() as tmp:
+            real = Path(tmp) / "private-etc"
+            real.mkdir()
+            link = Path(tmp) / "etc"
+            link.symlink_to(real, target_is_directory=True)
+            with mock.patch.object(f, "SENSITIVE_PATH_ROOTS", (str(link),)):
+                self.assertTrue(f.is_sensitive_out_path(str(link / "meta_decks.json")))
+                self.assertFalse(f.is_sensitive_out_path(str(real / "meta_decks.json")))
+
     def test_main_refuses_sensitive_out_without_force(self) -> None:
         stderr = io.StringIO()
         with mock.patch.object(f, "fetch_decks") as fetch_mock, \

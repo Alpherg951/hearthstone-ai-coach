@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
 import re
 import sys
 import time
@@ -72,20 +73,57 @@ SENSITIVE_PATH_ROOTS = (
     "/boot", "/sys", "/proc", "/dev", "/root", "/var",
 )
 
+# macOS keeps the per-user temp directory under /var/folders: inside /var, but
+# scratch space rather than system state.
+SAFE_PATH_SUBTREES = ("/var/folders", "/private/var/folders")
+
+
+def _is_within(path: Path, root: str) -> bool:
+    root_path = Path(root)
+    return path == root_path or root_path in path.parents
+
+
+def _hits_sensitive_root(candidate: Path) -> bool:
+    for root in SENSITIVE_PATH_ROOTS:
+        if not _is_within(candidate, root):
+            continue
+        if root in ("/var", "/private/var") and any(
+            _is_within(candidate, safe) for safe in SAFE_PATH_SUBTREES
+        ):
+            continue
+        return True
+    return False
+
+
+def _out_path_candidates(path: str) -> tuple[Path, ...]:
+    """The literal absolute path plus its symlink-resolved form.
+
+    Checking the resolved form alone misses macOS, where /etc is a symlink to
+    /private/etc: resolving moved the path out from under SENSITIVE_PATH_ROOTS,
+    so the guard waved system paths through. Keeping the literal form as well
+    catches both spellings, and normalising it first stops ../ from slipping past.
+    """
+    expanded = Path(path).expanduser()
+    candidates: list[Path] = []
+    for candidate in (Path(os.path.abspath(str(expanded))), expanded.resolve()):
+        if candidate not in candidates:
+            candidates.append(candidate)
+    return tuple(candidates)
+
 
 def is_sensitive_out_path(path: str, home: Path | None = None) -> bool:
     """True for output paths that could clobber system files or home dotfiles."""
-    resolved = Path(path).expanduser().resolve()
-    for root in SENSITIVE_PATH_ROOTS:
-        root_path = Path(root)
-        if resolved == root_path or root_path in resolved.parents:
-            return True
     home = (home or Path.home()).resolve()
-    try:
-        relative = resolved.relative_to(home)
-    except ValueError:
-        return False
-    return any(part.startswith(".") for part in relative.parts)
+    for candidate in _out_path_candidates(path):
+        if _hits_sensitive_root(candidate):
+            return True
+        try:
+            relative = candidate.relative_to(home)
+        except ValueError:
+            continue
+        if any(part.startswith(".") for part in relative.parts):
+            return True
+    return False
 
 
 def guess_class(url: str, title: str) -> str | None:
