@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hearthstone Coach Overlay</title>
+  <title data-i18n="Hearthstone Coach Overlay">Hearthstone Coach Overlay</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -11,10 +11,10 @@
     <section class="advice-card panel" id="panel-advice">
       <div class="topline">
         <div>
-          <div class="eyebrow" id="eyebrow">LIVE COACH</div>
-          <h1 id="headline">Waiting for live coach</h1>
+          <div class="eyebrow" id="eyebrow"><span data-i18n="LIVE COACH">LIVE COACH</span></div>
+          <h1 id="headline"><span data-i18n="Waiting for live coach">Waiting for live coach</span></h1>
         </div>
-        <div class="turn-pill" id="turn-pill">turn —</div>
+        <div class="turn-pill" id="turn-pill"><span data-i18n="turn —">turn —</span></div>
       </div>
       <div id="lethal" class="lethal hidden"></div>
       <div id="discover" class="discover hidden"></div>
@@ -23,46 +23,46 @@
       <ol id="steps" class="steps"></ol>
       <div id="mulligan" class="mulligan hidden"></div>
       <div id="warning" class="warning hidden"></div>
-      <div id="stale" class="stale hidden">Advice may be stale — waiting for current-turn instructions.</div>
-      <footer><span id="data-path">loading…</span><button id="choices-toggle" class="choices-toggle" title="Who answers mulligans and Discovers (click to change; Ctrl+Shift+J in the app)">choices: —</button><span class="overlay-state">click-through</span></footer>
+      <div id="stale" class="stale hidden"><span data-i18n="Advice may be stale — waiting for current-turn instructions.">Advice may be stale — waiting for current-turn instructions.</span></div>
+      <footer><select id="language-select" aria-label="界面语言 / Language"><option value="zhCN">简体中文</option><option value="enUS">English</option></select><span id="data-path"><span data-i18n="loading…">loading…</span></span><button id="choices-toggle" class="choices-toggle" title="Who answers mulligans and Discovers (click to change; Ctrl+Shift+J in the app)">choices: —</button><span class="overlay-state"><span data-i18n="click-through">click-through</span></span></footer>
     </section>
 
     <aside class="tracker-card panel" id="panel-deck">
       <section>
-        <h2>Deck left <span id="deck-count"></span></h2>
-        <div id="deck-left" class="deck-list empty">No deck list yet.</div>
+        <h2><span data-i18n="Deck left">Deck left</span><span id="deck-count"></span></h2>
+        <div id="deck-left" class="deck-list empty"><span data-i18n="No deck list yet.">No deck list yet.</span></div>
       </section>
-      <footer><span class="overlay-state">click-through</span></footer>
+      <footer><span class="overlay-state"><span data-i18n="click-through">click-through</span></span></footer>
     </aside>
 
     <aside class="tracker-card panel" id="panel-opponent">
       <div class="status-row">
-        <div class="hero opp wide"><span id="opp-title">OPPONENT</span><small id="opp-counts">— in hand · — in deck</small></div>
+        <div class="hero opp wide"><span id="opp-title"><span data-i18n="OPPONENT">OPPONENT</span></span><small id="opp-counts"><span data-i18n="— in hand · — in deck">— in hand · — in deck</span></small></div>
       </div>
       <section>
-        <h2>Played / revealed</h2>
-        <div id="opp-played" class="deck-list empty">No reveals yet.</div>
+        <h2><span data-i18n="Played / revealed">Played / revealed</span></h2>
+        <div id="opp-played" class="deck-list empty"><span data-i18n="No reveals yet.">No reveals yet.</span></div>
       </section>
-      <footer><span class="overlay-state">click-through</span></footer>
+      <footer><span class="overlay-state"><span data-i18n="click-through">click-through</span></span></footer>
     </aside>
 
     <aside class="tracker-card panel" id="panel-lessons">
       <section>
-        <h2>Coaching lessons</h2>
-        <div id="lessons" class="lessons-list empty">No lessons recorded yet.</div>
+        <h2><span data-i18n="Coaching lessons">Coaching lessons</span></h2>
+        <div id="lessons" class="lessons-list empty"><span data-i18n="No lessons recorded yet.">No lessons recorded yet.</span></div>
       </section>
-      <footer><span class="overlay-state">click-through</span></footer>
+      <footer><span class="overlay-state"><span data-i18n="click-through">click-through</span></span></footer>
     </aside>
 
     <aside class="tracker-card panel" id="panel-stats">
       <section>
-        <h2>Deck stats <span id="stats-deck"></span> <span id="stats-streak"></span></h2>
-        <div id="stats-record" class="stats-record empty">No games recorded yet.</div>
+        <h2><span data-i18n="Deck stats">Deck stats</span><span id="stats-deck"></span> <span id="stats-streak"></span></h2>
+        <div id="stats-record" class="stats-record empty"><span data-i18n="No games recorded yet.">No games recorded yet.</span></div>
         <div id="stats-overall" class="stats-overall"></div>
         <div id="stats-last10" class="stats-last10"></div>
         <div id="stats-matchups" class="stats-matchups"></div>
       </section>
-      <footer><span class="overlay-state">click-through</span></footer>
+      <footer><span class="overlay-state"><span data-i18n="click-through">click-through</span></span></footer>
     </aside>
 
     <!-- Tiny always-clickable button bar (Electron only; hidden in browser mode). -->
@@ -72,6 +72,7 @@
       <button id="btn-quit" class="ctl quit" title="Quit overlay">&#x23FB;</button>
     </aside>
   </main>
+  <script src="i18n.js"></script>
   <script src="logic.js"></script>
   <script src="browser-shim.js"></script>
   <script src="app.js"></script>

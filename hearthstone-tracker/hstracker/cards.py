@@ -6,6 +6,7 @@ Battlegrounds heroes); falls back to the classic HERO_NN numbering offline.
 from __future__ import annotations
 
 import json
+import os
 import re
 import urllib.request
 from pathlib import Path
@@ -40,13 +41,22 @@ class HeroClassResolver:
         self._names: dict[str, str] = {}
         self._cards: dict[str, dict] = {}
         cards = None
-        if CACHE.exists():
+        cache = Path(os.environ.get("HS_CARD_EN_FILE", str(Path(__file__).resolve().parents[2] / "data" / "cards.enUS.json")))
+        if not cache.exists():
+            cache = CACHE
+        if cache.exists():
             try:
-                cards = json.loads(CACHE.read_text(encoding="utf-8"))
+                cards = json.loads(cache.read_text(encoding="utf-8"))
             except Exception:
                 cards = None
         if cards is None and allow_fetch:
             cards = _download_cards()
+        self._localized: dict[str, dict] = {}
+        localized_path = Path(os.environ.get("HS_CARD_LOCALE_FILE", str(Path(__file__).resolve().parents[2] / "data" / "cards.zhCN.json")))
+        try:
+            self._localized = {c["id"]: c for c in json.loads(localized_path.read_text(encoding="utf-8")) if c.get("id")}
+        except (OSError, ValueError, TypeError):
+            pass
         self._by_dbf: dict[int, dict] = {}
         for card in cards or []:
             cid, cls = card.get("id"), card.get("cardClass")
@@ -84,3 +94,22 @@ class HeroClassResolver:
         if m:
             return _HERO_NN_CLASS.get(m.group(1))
         return cls
+
+
+def localized_snapshot(snapshot: dict, resolver: HeroClassResolver) -> dict:
+    """Attach display-only translations, preserving canonical names for matching."""
+    cards = {}
+    def visit(value):
+        if isinstance(value, dict):
+            cid = value.get("id")
+            localized = resolver._localized.get(cid) if isinstance(cid, str) else None
+            if localized:
+                cards[cid] = {"name": localized.get("name"), "text": localized.get("text", "")}
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+    visit(snapshot)
+    snapshot["localized_cards"] = cards
+    return snapshot

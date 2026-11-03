@@ -21,6 +21,10 @@ if (!window.overlayAPI) {
       if (!r.ok) throw new Error(`settings: HTTP ${r.status}`);
       return mode;
     }),
+    setLocale: (locale) => fetch('/settings', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({locale}),
+    }).then(r => { if (!r.ok) throw new Error('Language save failed'); return locale; }),
     quit: () => {}, // a browser tab cannot quit the overlay; the button is hidden anyway
     onState: (callback) => callback({ clickThrough: false, opacity: 1 }),
     onFileChanged: () => {}, // browser mode has no watcher; polling covers it

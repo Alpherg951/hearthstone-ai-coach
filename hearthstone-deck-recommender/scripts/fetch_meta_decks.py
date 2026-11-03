@@ -77,7 +77,7 @@ def is_sensitive_out_path(path: str, home: Path | None = None) -> bool:
     """True for output paths that could clobber system files or home dotfiles."""
     resolved = Path(path).expanduser().resolve()
     for root in SENSITIVE_PATH_ROOTS:
-        root_path = Path(root)
+        root_path = Path(root).resolve()
         if resolved == root_path or root_path in resolved.parents:
             return True
     home = (home or Path.home()).resolve()

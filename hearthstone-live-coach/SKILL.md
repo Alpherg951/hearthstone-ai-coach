@@ -3,6 +3,18 @@ name: hearthstone-live-coach
 description: Coach the user through a live Hearthstone game in real time by tailing the game's own logs. Use this when the user asks for live/in-game Hearthstone advice, turn-by-turn coaching, mulligan help while playing, "what's my play", or lethal checks during a match. Requires the hearthstone-tracker CLI from this repository and a running Hearthstone client with Power logging enabled.
 ---
 
+## Output language / 输出语言
+
+Default to Simplified Chinese (`zhCN`) for user-facing advice, reasons, warnings,
+lessons, and post-game reviews. Honor an explicit English request or `HS_LOCALE=enUS`.
+Keep command names, feed markers, JSON field names, enum values, and card IDs intact.
+Use official Chinese card names from `data/cards.zhCN.json` matched by card ID when
+available; include the canonical English name in parentheses for ambiguous cards.
+Keep structured lesson triggers and `--step` card references in canonical English
+where the matching/validator requires it; provide Chinese explanations alongside them.
+Never rewrite existing English lessons automatically. Missing translations fall back
+to their original text. Do not translate arbitrary player names or deck titles.
+
 # Hearthstone Live Coach
 
 ## COST GUARD — check BEFORE arming anything (hard rule, 2026-07-12)

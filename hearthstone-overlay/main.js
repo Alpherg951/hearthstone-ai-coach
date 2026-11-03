@@ -325,3 +325,17 @@ app.on('window-all-closed', () => {
   globalShortcut.unregisterAll();
   app.quit();
 });
+
+ipcMain.handle('set-locale', (_event, locale) => {
+  if (!['zhCN','enUS'].includes(locale)) throw new Error('Invalid locale');
+  const file = path.join(config.overlayDir, 'settings.json');
+  fs.mkdirSync(config.overlayDir, {recursive:true});
+  let saved = {};
+  try { saved = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) {}
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) saved = {};
+  const tmp = `${file}.${process.pid}.locale.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify({...saved, locale}));
+  fs.renameSync(tmp,file);
+  broadcast('overlay-file-changed','settings.json');
+  return locale;
+});

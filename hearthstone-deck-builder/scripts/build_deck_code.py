@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+from pathlib import Path
 import os
 import shutil
 import subprocess
@@ -279,6 +280,16 @@ def build_indexes(cards: Iterable[dict[str, Any]]) -> tuple[dict[str, list[dict[
             by_dbf[dbf_id] = card
         if name:
             by_name[normalize_name(name)].append(card)
+    locale_file = Path(__file__).resolve().parents[2] / "data" / "cards.zhCN.json"
+    try:
+        for translated in json.loads(locale_file.read_text(encoding="utf-8")):
+            canonical = by_dbf.get(translated.get("dbfId"))
+            if canonical and translated.get("name"):
+                key = normalize_name(translated["name"])
+                if canonical not in by_name[key]:
+                    by_name[key].append(canonical)
+    except (OSError, ValueError, TypeError):
+        pass
     return by_name, by_dbf
 
 

@@ -24,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "hearthstone-tracker"))
 from hstracker.choices import MODES as CHOICES_MODES  # noqa: E402
-from hstracker.choices import write_mode  # noqa: E402
+from hstracker.choices import write_mode, write_locale  # noqa: E402
 from hstracker.overlay import resolve_overlay_dir  # noqa: E402
 
 RENDERER_DIR = Path(__file__).resolve().parent / "renderer"
@@ -106,7 +106,13 @@ class OverlayHandler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length))
             mode = body.get("choices") if isinstance(body, dict) else None
         except ValueError:
+            body = None
             mode = None
+        if isinstance(body, dict) and "locale" in body:
+            if body["locale"] not in ("zhCN", "enUS"):
+                return self._send_error(400, "invalid locale")
+            write_locale(self.overlay_dir, body["locale"])
+            return self._send_json({"locale": body["locale"]})
         if mode not in CHOICES_MODES:
             return self._send_error(400, f"choices must be one of {', '.join(CHOICES_MODES)}")
         write_mode(self.overlay_dir, mode)

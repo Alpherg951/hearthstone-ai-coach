@@ -33,3 +33,7 @@ cookies.txt
 deck.txt
 hearthstone-overlay/config.json
 .pytest_cache/
+
+/runtime/
+/dist/
+/data/

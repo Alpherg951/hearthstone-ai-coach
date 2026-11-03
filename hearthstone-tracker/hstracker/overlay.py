@@ -241,7 +241,17 @@ def atomic_write_json(path: Path, payload: dict[str, Any]) -> Path:
     # two of them (back-to-back Discovers) must not share a temp file.
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
     tmp.write_text(json.dumps(payload, indent=1, sort_keys=True), encoding="utf-8")
-    os.replace(tmp, path)
+    try:
+        for attempt in range(20):
+            try:
+                os.replace(tmp, path)
+                break
+            except PermissionError:
+                if os.name != "nt" or attempt == 19:
+                    raise
+                time.sleep(0.01 * (attempt + 1))
+    finally:
+        tmp.unlink(missing_ok=True)
     return path
 
 

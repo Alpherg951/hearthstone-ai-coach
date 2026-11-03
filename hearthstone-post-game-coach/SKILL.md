@@ -3,6 +3,18 @@ name: hearthstone-post-game-coach
 description: Analyze a completed Hearthstone game from the logs. Identify the losing decision, suggest deck tweaks, and coach on game mechanics for the next game. Use this after a game ends — triggered by "== GAME OVER" from hearthstone-live-coach, or standalone off "./hst watch"'s own completion line if you're not running live-coach.
 ---
 
+## Output language / 输出语言
+
+Default to Simplified Chinese (`zhCN`) for user-facing advice, reasons, warnings,
+lessons, and post-game reviews. Honor an explicit English request or `HS_LOCALE=enUS`.
+Keep command names, feed markers, JSON field names, enum values, and card IDs intact.
+Use official Chinese card names from `data/cards.zhCN.json` matched by card ID when
+available; include the canonical English name in parentheses for ambiguous cards.
+Keep structured lesson triggers and `--step` card references in canonical English
+where the matching/validator requires it; provide Chinese explanations alongside them.
+Never rewrite existing English lessons automatically. Missing translations fall back
+to their original text. Do not translate arbitrary player names or deck titles.
+
 # Hearthstone Post-Game Coach
 
 **COST GUARD (same rule as hearthstone-live-coach):** before analyzing, check

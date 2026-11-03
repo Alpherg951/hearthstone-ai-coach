@@ -31,7 +31,7 @@
       : '';
     const html = `<div class="deck-card${artUrl && art ? ' art' : ''}${gone ? ' gone' : ''}${flash ? ' flash' : ''}"${art}>`
       + `<span class="cost">${escapeHtml(card.cost ?? '?')}</span>`
-      + `<span class="deck-name">${escapeHtml(card.name)}</span>`
+      + `<span class="deck-name" title="${escapeHtml(card.display_text || card.name)}">${escapeHtml(card.name)}</span>`
       + `${copies > 1 ? `<span class="copies">×${copies}</span>` : ''}`
       + `<span class="odds">${odds}</span></div>`;
     return { html, copies };

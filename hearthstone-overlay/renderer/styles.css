@@ -184,3 +184,9 @@ body.movable .advice-card, body.movable .tracker-card { -webkit-app-region: drag
 body.movable .controls-card { -webkit-app-region: drag; outline: 2px solid var(--blurple); outline-offset: -2px; }
 body.movable #btn-move { color: #fff; background: var(--blurple); border-color: var(--blurple); }
 .waiting .steps:empty::after { content: "No current instructions."; color: var(--faint); font-size: 13px; }
+
+/* Chinese text uses the installed CJK font; Latin game lettering stays available. */
+html[lang="zh-CN"] { --hs-font: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif; }
+html[lang="zh-CN"] body { font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; }
+.why, .lesson, #steps li, .warning { overflow-wrap: anywhere; }
+#language-select { background: #25272b; color: #f2f3f5; border: 1px solid #666; border-radius: 4px; max-width: 110px; }

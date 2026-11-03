@@ -106,3 +106,19 @@ def status_line(mode: str, jev_available: bool) -> str:
     fallback = (f" ({mode} picked, but TYPESAFE_API_KEY is not set)"
                 if eff != mode else "")
     return f"== CHOICES MODE: {eff}{fallback} — {note}"
+
+
+def write_locale(overlay_dir: str | os.PathLike[str], locale: str) -> Path:
+    """Persist display language independently of the choices mode."""
+    if locale not in ("zhCN", "enUS"):
+        raise ValueError("locale must be zhCN or enUS")
+    path = Path(overlay_dir) / SETTINGS_FILE
+    try:
+        current = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(current, dict):
+            current = {}
+    except (OSError, ValueError):
+        current = {}
+    current["locale"] = locale
+    from .overlay import atomic_write_json
+    return atomic_write_json(path, current)

@@ -1,3 +1,4 @@
+const {t} = window.OverlayI18n;
 const $ = (id) => document.getElementById(id);
 const {
   escapeHtml, isValidCardId, cardRowHtml, isAdviceStale, panelLessons, lessonLabel,
@@ -44,6 +45,8 @@ function setHidden(node, hidden) { node.classList.toggle('hidden', hidden); }
 function cardRow(card, { left = null, remaining = 0 } = {}) {
   const key = `${card.name}|${card.cost}`;
   const artUrl = card.id && isValidCardId(card.id) ? resolveArt(card.id) : null;
+  const localized = live?.localized_cards?.[card.id];
+  card = {...card, display_text: window.OverlayI18n.getLocale() === 'zhCN' ? localized?.text : card.text, name: window.OverlayI18n.getLocale() === 'zhCN' ? (localized?.name || card.name) : card.name};
   const { html, copies } = cardRowHtml(card, { left, remaining, prevLeft: deckSeen.get(key), artUrl });
   deckSeen.set(key, copies);
   return html;
@@ -54,62 +57,72 @@ function renderDeck() {
   const remaining = Number(live.me.deck_remaining || 0);
   const deck = (live.me.deck_full && live.me.deck_full.length) ? live.me.deck_full : (live.me.deck_cards_left || []);
   const extras = (live.me.deck_extra || []).filter((c) => c.cost != null);
-  $('deck-count').textContent = remaining ? `${remaining} cards` : '';
+  $('deck-count').textContent = t(remaining ? `${remaining} cards` : '');
   $('deck-left').innerHTML = deck.length || extras.length
     ? deck.map((c) => cardRow(c, { left: c.left ?? Number(c.count || 1), remaining })).join('')
-      + (extras.length ? `<div class="deck-sep">generated / shuffled</div>${extras.map((c) => cardRow(c, { remaining })).join('')}` : '')
-    : '<div class="empty">No deck list yet.</div>';
+      + (extras.length ? `<div class="deck-sep">${t('generated / shuffled')}</div>${extras.map((c) => cardRow(c, { remaining })).join('')}` : '')
+    : `<div class="empty">${t('No deck list yet.')}</div>`;
 }
 
 function renderOpponent() {
   if (!live || !live.opp) return;
-  $('opp-title').textContent = live.opp.class ? `OPPONENT · ${live.opp.class}` : 'OPPONENT';
+  $('opp-title').textContent = t(live.opp.class ? `OPPONENT · ${live.opp.class}` : 'OPPONENT');
   const oppHand = Number(live.opp.hand_hidden || 0) + Number((live.opp.hand || []).length);
   const oppDeck = live.opp.deck_remaining ?? '—';
   const secrets = live.opp.secrets ? ` · ${live.opp.secrets} secrets` : '';
-  $('opp-counts').textContent = `${oppHand} in hand · ${oppDeck} in deck${secrets}`;
+  $('opp-counts').textContent = t(`${oppHand} in hand · ${oppDeck} in deck${secrets}`);
   const played = (live.opp.played || []).slice().reverse();
   $('opp-played').innerHTML = played.length
     ? played.map((p) => cardRow(p)).join('')
-    : '<div class="empty">No reveals yet.</div>';
+    : `<div class="empty">${t('No reveals yet.')}</div>`;
 }
 
+function displayCardName(name) {
+  if (window.OverlayI18n.getLocale() !== 'zhCN') return name;
+  for (const side of [live?.me, live?.opp]) {
+    for (const field of ['hand','board','deck_full','deck_cards_left','played']) {
+      const card = side?.[field]?.find(c => c.name === name);
+      if (card && live?.localized_cards?.[card.id]?.name) return live.localized_cards[card.id].name;
+    }
+  }
+  return name;
+}
 function renderAdvice() {
   const current = advice || {};
   const kind = current.kind || 'idle';
   const isLethal = current.lethal?.is_lethal || kind === 'lethal';
-  $('eyebrow').textContent = kind === 'idle' ? 'LIVE COACH' : kind.toUpperCase();
-  $('headline').textContent = current.headline || (isLethal ? 'LETHAL' : 'Do this now');
-  $('why').textContent = current.why || 'Waiting for the current turn plan.';
-  $('turn-pill').textContent = `turn ${live?.turn ?? current.turn ?? '—'}${live ? ` · ${live.whose_turn === 'me' ? 'your turn' : 'opponent'}` : ''}`;
+  $('eyebrow').textContent = t(kind === 'idle' ? 'LIVE COACH' : kind.toUpperCase());
+  $('headline').textContent = t(current.headline || (isLethal ? 'LETHAL' : 'Do this now'));
+  $('why').textContent = t(current.why || 'Waiting for the current turn plan.');
+  $('turn-pill').textContent = t(`turn ${live?.turn ?? current.turn ?? '—'}${live ? ` · ${live.whose_turn === 'me' ? 'your turn' : 'opponent'}` : ''}`);
 
   const lethal = $('lethal');
   if (isLethal) {
-    lethal.textContent = current.lethal?.math ? `LETHAL: ${current.lethal.math}` : 'LETHAL — do not trade first.';
+    lethal.textContent = t(current.lethal?.math ? `LETHAL: ${current.lethal.math}` : 'LETHAL — do not trade first.');
   }
   setHidden(lethal, !isLethal);
 
-  $('discover').textContent = current.discover ? `PICK: ${current.discover}` : '';
+  $('discover').textContent = t(current.discover ? `PICK: ${current.discover}` : '');
   setHidden($('discover'), !current.discover);
 
   const steps = current.steps || [];
   $('steps').innerHTML = steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('');
 
   const mulligan = current.mulligan || [];
-  $('mulligan').innerHTML = mulligan.map((row) => `<div class="mulligan-row"><span class="badge ${row.keep ? 'keep' : 'toss'}">${row.keep ? 'KEEP' : 'TOSS'}</span><div><strong>${escapeHtml(row.card)}</strong><br><span class="empty">${escapeHtml(row.reason || '')}</span></div></div>`).join('');
+  $('mulligan').innerHTML = mulligan.map((row) => `<div class="mulligan-row"><span class="badge ${row.keep ? 'keep' : 'toss'}">${t(row.keep ? 'KEEP' : 'TOSS')}</span><div><strong>${escapeHtml(displayCardName(row.card))}</strong><br><span class="empty">${escapeHtml(row.reason || '')}</span></div></div>`).join('');
   setHidden($('mulligan'), !mulligan.length);
 
   const second = secondOpinion(current, jevDoc, Date.now() / 1000, choicesMode(settings));
-  $('second-opinion').textContent = second || '';
+  $('second-opinion').textContent = window.OverlayI18n.getLocale() === 'zhCN' ? (second || '').replace(/\bkeep /g, '保留 ').replace(/\btoss /g, '换掉 ') : (second || '');
   setHidden($('second-opinion'), !second);
 
-  $('warning').textContent = current.warning || '';
+  $('warning').textContent = t(current.warning || '');
   setHidden($('warning'), !current.warning);
 
   // Phase 6a: make the authoring model visible (standing constraint) so
   // behavior differences and credit burn stay attributable per model.
   const dataPath = $('data-path');
-  if (dataPath) dataPath.textContent = current.model ? `${config.overlayDir} · coach: ${current.model}` : config.overlayDir;
+  if (dataPath) dataPath.textContent = t(current.model ? `${config.overlayDir} · coach: ${current.model}` : config.overlayDir);
 
   setHidden($('stale'), !isAdviceStale(current, live?.turn, config.staleAdviceSeconds, Date.now() / 1000));
   renderChoices($('choices-toggle'), (label) => `choices: ${label}`);
@@ -120,7 +133,7 @@ function renderAdvice() {
 function renderChoices(node, format = (label) => label) {
   if (!node) return;
   const mode = choicesMode(settings);
-  node.textContent = format(choicesLabel(mode));
+  node.textContent = t(format(t(choicesLabel(mode))));
   node.classList.remove(...CHOICES_MODES);
   if (mode) node.classList.add(mode);
 }
@@ -141,7 +154,7 @@ function renderLessons() {
   const { headline, points } = panelLessons(lessonStore?.lessons || [], { exclude: matchedRecs.map((m) => m.lesson), deck: live?.deck });
   const sections = [];
   if (matchedRecs.length) {
-    sections.push(matchedRecs.map((m) => `<div class="lesson matched">${escapeHtml(m.cost ? `${m.lesson} — cost last time: ${m.cost}` : m.lesson)}</div>`).join(''));
+    sections.push(matchedRecs.map((m) => `<div class="lesson matched">${escapeHtml(m.cost ? `${m.lesson} — ${t('cost last time: ')}${m.cost}` : m.lesson)}</div>`).join(''));
   }
   if (headline) {
     sections.push(`<div class="lesson headline">${escapeHtml(headline.lesson)}</div>`);
@@ -152,31 +165,40 @@ function renderLessons() {
       return `<div class="lesson">${tag ? `<span class="lesson-tag">${escapeHtml(tag)}</span> ` : ''}${escapeHtml(lessonLabel(rec))}</div>`;
     }).join(''));
   }
-  $('lessons').innerHTML = sections.length ? sections.join('') : '<div class="empty">No lessons recorded yet.</div>';
+  $('lessons').innerHTML = sections.length ? sections.join('') : `<div class="empty">${t('No lessons recorded yet.')}</div>`;
 }
 
 function renderStats() {
   if (!deckStats) return;
-  $('stats-deck').textContent = deckStats.deck || '';
-  $('stats-record').textContent = deckStats.games
+  $('stats-deck').textContent = t(deckStats.deck || '');
+  $('stats-record').textContent = t(deckStats.games
     ? `${deckStats.wins}–${deckStats.losses} · ${deckStats.winrate}% over ${deckStats.games} games`
-    : 'first recorded game with this deck';
+    : 'first recorded game with this deck');
   $('stats-record').classList.remove('empty');
   const streak = $('stats-streak');
-  streak.textContent = deckStats.streak || '';
+  streak.textContent = window.OverlayI18n.getLocale() === 'zhCN' ? String(deckStats.streak || '').replace(/^W(\d+)$/, '$1 连胜').replace(/^L(\d+)$/, '$1 连败') : (deckStats.streak || '');
   streak.className = deckStats.streak ? `streak ${deckStats.streak[0] === 'W' ? 'w' : 'l'}` : '';
   const overall = deckStats.overall;
-  $('stats-overall').textContent = overall?.games
+  $('stats-overall').textContent = t(overall?.games
     ? `Overall: ${overall.wins}–${overall.losses} · ${overall.winrate}% over ${overall.games} games`
-    : '';
+    : '');
   $('stats-last10').innerHTML = (deckStats.last10 || []).map((w) => `<span class="pip ${w ? 'w' : 'l'}"></span>`).join('')
-    + (deckStats.last10?.length ? '<span class="pip-label">last 10, newest first</span>' : '');
+    + (deckStats.last10?.length ? `<span class="pip-label">${t('last 10, newest first')}</span>` : '');
   $('stats-matchups').innerHTML = (deckStats.matchups || []).map((m) =>
-    `<div class="matchup"><span class="mu-class">${escapeHtml(m.opp_class)}</span><span class="mu-rec">${m.wins}–${m.games - m.wins}</span><span class="mu-rate ${m.winrate >= 50 ? 'good' : 'bad'}">${m.winrate}%</span></div>`
+    `<div class="matchup"><span class="mu-class">${escapeHtml(t(m.opp_class))}</span><span class="mu-rec">${m.wins}–${m.games - m.wins}</span><span class="mu-rate ${m.winrate >= 50 ? 'good' : 'bad'}">${m.winrate}%</span></div>`
   ).join('');
 }
 
+function applyLanguage() {
+  document.documentElement.lang = window.OverlayI18n.getLocale() === 'zhCN' ? 'zh-CN' : 'en';
+  for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = t(node.dataset.i18n);
+  for (const node of document.querySelectorAll('[title]')) {
+    if (!node.dataset.titleEn) node.dataset.titleEn = node.title;
+    node.title = t(node.dataset.titleEn);
+  }
+}
 function render() {
+  applyLanguage();
   const app = $('app');
   app.classList.toggle('waiting', !live || !live.me);
   if (panel === 'deck' || panel === 'all') renderDeck();
@@ -197,7 +219,10 @@ async function pollFile(fileName) {
       if (fileName === 'lessons.json') lessonsDoc = result.data;
       if (fileName === 'lesson_store.json') lessonStore = result.data;
       if (fileName === 'deck_stats.json') deckStats = result.data;
-      if (fileName === 'settings.json') settings = result.data;
+      if (fileName === 'settings.json') {
+        settings = result.data;
+        if (settings?.locale) { window.OverlayI18n.setLocale(settings.locale); $('language-select').value = window.OverlayI18n.getLocale(); }
+      }
       if (fileName === 'jev.json') jevDoc = result.data;
       return true;
     }
@@ -219,7 +244,7 @@ const FILES_BY_PANEL = {
 };
 
 async function tick() {
-  const files = FILES_BY_PANEL[panel] || FILES_BY_PANEL.all;
+  const files = [...new Set([...(FILES_BY_PANEL[panel] || FILES_BY_PANEL.all), 'settings.json'])];
   let changed = false;
   for (const file of files) changed = (await pollFile(file)) || changed;
   if (changed) render();
@@ -238,22 +263,36 @@ function wireControls() {
 
 async function boot() {
   document.body.dataset.panel = panel;
+  let savedLocale;
+  try { savedLocale = localStorage.getItem('hs-locale'); } catch (_) {}
+  window.OverlayI18n.setLocale(savedLocale || 'zhCN');
+  const picker = $('language-select');
+  picker.value = window.OverlayI18n.getLocale();
+  picker.addEventListener('change', async () => {
+    window.OverlayI18n.setLocale(picker.value);
+    try { localStorage.setItem('hs-locale', picker.value); } catch (_) {}
+    try { await window.overlayAPI.setLocale(picker.value); } catch (error) { console.warn(error); }
+    render();
+  });
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'hs-locale') { picker.value = window.OverlayI18n.setLocale(event.newValue); render(); }
+  });
   if (panel === 'controls') wireControls();
   // Browser mode has no controls bar, so the advice footer's twin is the picker.
   if (panel === 'all') $('choices-toggle').addEventListener('click', cycleChoices);
   config = await window.overlayAPI.config();
   const dataPath = $('data-path');
-  if (dataPath) dataPath.textContent = config.overlayDir;
+  if (dataPath) dataPath.textContent = t(config.overlayDir);
   window.overlayAPI.onState((state) => {
     for (const node of document.querySelectorAll('.overlay-state')) {
-      node.textContent = state.clickThrough ? `click-through · ${Math.round(state.opacity * 100)}%` : `move/resize · ${Math.round(state.opacity * 100)}%`;
+      node.textContent = t(state.clickThrough ? `click-through · ${Math.round(state.opacity * 100)}%` : `move/resize · ${Math.round(state.opacity * 100)}%`);
     }
     document.body.classList.toggle('movable', !state.clickThrough);
   });
   // Push-first: the main process watches the shared folder and nudges us on
   // writes; the interval is only a fallback (slow in push mode).
   window.overlayAPI.onFileChanged(async (fileName) => {
-    if ((FILES_BY_PANEL[panel] || FILES_BY_PANEL.all).includes(fileName)) {
+    if (fileName === 'settings.json' || (FILES_BY_PANEL[panel] || FILES_BY_PANEL.all).includes(fileName)) {
       if (await pollFile(fileName)) render();
     }
   });

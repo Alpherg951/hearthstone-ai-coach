@@ -548,7 +548,8 @@ def snapshot_from_tree(
         snapshot["opp"]["played"] = played
     except Exception:
         snapshot["opp"]["played"] = []
-    return snapshot
+    from .cards import localized_snapshot
+    return localized_snapshot(snapshot, resolver)
 
 
 class LiveGameTail:
